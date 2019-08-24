@@ -10,6 +10,10 @@ class Unsplash {
     this.searchPhotos = this.searchPhotos.bind(this);
   }
 
+  getUrlById({ id }) {
+    return `https://source.unsplash.com/${id}/2300x0`;
+  }
+
   async getPhotos() {
     const url = `${ROOT}/photos?per_page=100&client_id=${this.params.apiKey}`;
     console.log("Unsplash#getPhotos url", url);

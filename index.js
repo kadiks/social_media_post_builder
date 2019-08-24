@@ -1,11 +1,15 @@
 require("dotenv").config();
 
 const fs = require("fs-extra");
+const path = require("path");
 const express = require("express");
 const bodyParser = require("body-parser");
 var exphbs = require("express-handlebars");
+const request = require("request-promise-native");
 const _ = require("lodash");
 const fabric = require("fabric").fabric;
+const moment = require("moment");
+const { CATEGORIES, AUTHORS_I18N } = require("./src/constants");
 
 const gsheets = require("./gsheets");
 
@@ -36,19 +40,152 @@ app.use("/js", express.static(__dirname + "/node_modules/qs/dist"));
 app.use("/js", express.static(__dirname + "/node_modules/farbstastic"));
 app.use("/css", express.static(__dirname + "/node_modules/farbstastic"));
 
-app.get("/", (req, res) => {
+// https://stackoverflow.com/a/26983436/185771
+app.get("/proxy", (req, res) => {
+  const url = req.query.url;
+  request
+    .get(url)
+    .catch(e => {
+      console.log(`/proxy on url ${url} with error ${e}`);
+    })
+    .pipe(res);
+});
+
+app.get("/", async (req, res) => {
+  const exportPath = "public/exports";
+  const folders = fs.readdirSync(exportPath);
+  folders.splice(0, 1);
+  // console.log("files", files);
+  const foldersToInt = folders.map(f => parseInt(f));
+  foldersToInt.sort((a, b) => {
+    if (a < b) {
+      return 1;
+    } else {
+      return -1;
+    }
+  });
+
+  const settings = getAllSettings({ folders, exportPath });
+
+  // console.log("settings", settings);
+  const groupIndex = {};
+  const orderById = [];
+  settings.forEach(curSettings => {
+    // console.log("route /, curSettings", curSettings);
+    if (curSettings === null) {
+      return;
+    }
+    if (curSettings.hasOwnProperty("quoteIndex") === true) {
+      curSettings.quoteIndex = parseInt(curSettings.quoteIndex);
+    }
+    if (curSettings.hasOwnProperty("name") === true) {
+      orderById.splice(
+        foldersToInt.indexOf(curSettings.name),
+        0,
+        parseInt(curSettings.quoteIndex)
+      );
+    }
+    if (groupIndex.hasOwnProperty(curSettings.quoteIndex) === false) {
+      groupIndex[curSettings.quoteIndex] = {};
+    }
+    if (
+      groupIndex[curSettings.quoteIndex].hasOwnProperty(
+        curSettings.quoteLanguage
+      ) === false
+    ) {
+      groupIndex[curSettings.quoteIndex][curSettings.quoteLanguage] = [];
+    }
+    // console.log("route /, groupIndex", groupIndex);
+    const curTs = curSettings.name;
+    let insertIndex = 0;
+    groupIndex[curSettings.quoteIndex][curSettings.quoteLanguage].forEach(
+      (compSettings, index) => {
+        if (compSettings.name > curTs) {
+          insertIndex = index;
+        }
+      }
+    );
+    groupIndex[curSettings.quoteIndex][curSettings.quoteLanguage].splice(
+      insertIndex,
+      0,
+      curSettings
+    );
+  });
+
+  const orderSettingsByTs = [];
+  orderById.forEach((quoteIndex, index) => {
+    if (groupIndex.hasOwnProperty(quoteIndex) === true) {
+      const group = JSON.parse(JSON.stringify(groupIndex[quoteIndex]));
+      console.log("group", Object.keys(group));
+      let lang = "en";
+      let ts = _.get(group, "en[0].name", new Date().getTime());
+      if (_.get(group, "fr[0].name", 0) > ts) {
+        lang = "fr";
+        ts = group["fr"][0].name;
+      }
+      if (_.get(group, "es[0].name", 0) > ts) {
+        lang = "es";
+        ts = group["es"][0].name;
+      }
+      if (typeof group[lang] === "undefined") {
+        return;
+      }
+      const latest = group[lang][0];
+      group.info = {
+        id: latest.name,
+        title: latest.quoteText,
+        date: moment(latest.name).format("YYYY-MM-DD HH:mm:ss")
+      };
+      orderSettingsByTs.push(group);
+    }
+  });
+
+  // res.json(orderSettingsByTs);
+
   res.render("homepage", {
+    images: orderSettingsByTs
+  });
+
+  // res.json(orderById);
+
+  // const images = foldersToInt.map(f => ({ id: f, ts: new Date(f) }));
+  // res.render("homepage", {
+  //   images
+  // });
+});
+
+const getAllSettings = ({ folders, exportPath } = {}) => {
+  return folders.map(f => getSettingsById({ exportPath, id: f }));
+};
+
+const getSettingsById = ({ exportPath, id } = {}) => {
+  const settingsPath = path.join(exportPath, id, "settings.json");
+  // console.log("settingsPath", settingsPath);
+  try {
+    const settingsStr = fs.readFileSync(settingsPath, "utf8");
+    return JSON.parse(settingsStr);
+  } catch (e) {
+    return null;
+  }
+};
+
+app.get("/authors", (req, res) => {
+  res.json(AUTHORS_I18N);
+});
+
+app.get("/image", (req, res) => {
+  res.render("image", {
     unsplashApiKey: UNSPLASH_CLIENT_ID,
     googleSheetsApiKey: GOOGLE_SHEETS_KEY,
-    categories: [
-      "health",
-      "creativity",
-      "success",
-      "relationships",
-      "communication",
-      "mindset",
-      "spirituality"
-    ]
+    categories: Object.values(CATEGORIES)
+  });
+});
+
+app.get("/video", (req, res) => {
+  res.render("video", {
+    unsplashApiKey: UNSPLASH_CLIENT_ID,
+    googleSheetsApiKey: GOOGLE_SHEETS_KEY,
+    categories: Object.values(CATEGORIES)
   });
 });
 
@@ -74,23 +211,9 @@ app.post("/generate", async (req, res) => {
   });
 
   let source = null;
-  const caption = settings.quoteDetails[`caption_${settings.quoteLanguage}`];
-  const fullCaption = `${caption}
-If you liked it, please share it with your friends.
-${
-  settings.quoteDetails.source_website
-    ? `Source: ${settings.quoteDetails.source_website}` + "\n"
-    : ""
-}
-${
-  settings.unsplashUser.instagram_username
-    ? `Photo credits: ${settings.unsplashUser.name} @${
-        settings.unsplashUser.instagram_username
-      }` + "\n"
-    : ""
-}`;
+  const caption = getCaption({ settings });
 
-  settings.caption = fullCaption;
+  settings.caption = caption;
 
   try {
     source = await hbs.render("views/export.handlebars", settings, {
@@ -143,6 +266,40 @@ ${
     url: `${folderName}/index.html`
   });
 });
+
+const getCaption = ({ settings }) => {
+  const { quoteDetails, unsplashUser } = settings;
+  const googleCaption = quoteDetails[`caption_${settings.quoteLanguage}`];
+  let shareMention = "If you liked it, please share it with your friends.";
+  let sourceMention = "";
+  let photoCredits = `Photo credits: ${unsplashUser.name}`;
+  if (quoteDetails.source_website !== "") {
+    sourceMention = `Source: ${quoteDetails.source_website}` + "\n";
+  }
+  if (unsplashUser.instagram_username !== null) {
+    photoCredits += ` IG: @${unsplashUser.instagram_username}`;
+  }
+  if (unsplashUser.twitter_username !== null) {
+    photoCredits += ` Tw: @${unsplashUser.twitter_username}`;
+  }
+  if (quoteDetails.suggested_by_name !== "") {
+    shareMention = `This quote has been suggested by our member: ${
+      quoteDetails.suggested_by_name
+    } `;
+    if (quoteDetails.suggested_by_fb !== "") {
+      shareMention += `FB: ${quoteDetails.suggested_by_fb} `;
+    }
+    if (quoteDetails.suggested_by_ig !== "") {
+      shareMention += `IG: ${quoteDetails.suggested_by_ig}`;
+    }
+  }
+
+  return `${googleCaption}
+  
+${shareMention}
+
+${photoCredits}`;
+};
 
 const saveCanvas = async ({
   canvas,

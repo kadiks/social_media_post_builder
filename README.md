@@ -11,11 +11,16 @@
 - [ ] gsheets-utils to load and update gsheets data
 - [ ] Have a colored background option instead of an image
 - [ ] Have an option to add a layer on top of image to increase readability of text
+- [ ] Make the referential material appear along in the credits
 - [x] Change color text
+- [ ] Fix the credits to always appear even if the Instagram account does not exist
 - [ ] Change color shadow
 - [ ] ~~Add stroke around text~~
 - [ ] Have an option to center vertically or horizontally any object
 - [ ] Option to create GIF (check before if it works on FB, otherwise, create a video)
+- [ ] Handle several languages
+  - Have a language switch (visible but needs to be integrated)
+  - Integrate several quoteX and Y according to the language (then do the loading)
 - [ ] Options to have templates (check the Pinterest "well designed social media posts" wall and others for ideas)
 - [x] Add a "select" button to load image from the carousel only after I hit select (this slow down the app especially when I look at a lot of pictures)
 - [x] When using the button select, add those images to a list of "saved" image that I can review and reuse OR (easier) add a link to open the image on Unsplash and I save it to the Kyeda collection
@@ -25,4 +30,8 @@
   - [ ] fix scale image issue
   - [ ] fix image display delay
 - [ ] Upload image from computer
+- [ ] Load an image based on the settings.json
+- [ ] Select differents fonts (from the server itself with .ttf included in build)
+- [ ] Add frame "liseraie" of the color of the theme around each quote
+- [ ] Order all posts by the latest and group them by post index and display the different language posted as (might also be the good page for the post scheduler report)
 - [ ] Make video slideshow like [this one](https://www.facebook.com/forbes/videos/2210815839210391/?__xts__%5B0%5D=68.ARDZGhFdLZ5nPEECKDldx1FBX6eJ8X_oMyN0ny0nhpWJk1a0ipw2KzWTPsV9AUTNSxcXzBNlcC3VCSi2J8tW90Rhqw9DQ855wf-9gbHgAMnsVV3r7LcXHHAS473AjBRi0dP_pA5wZ9j1Y0k4z9-46_FvkCmnbXrzWZdKaA9m_4negMHXEmnLhS2iVwEJkk7XPukSdzT2OhM6wnTOhPNkVjHGc9dyIOwBjhvyBYFiyJzo5odXZWyBluErXHSYNbeiXpIPLS7D-IHT1qZR9CXC5oNY5QtRK51h8c008V00y1ejtsqvVveBO_vKwas70VczStEiL91oi90mI5rgEjkjYplzy45NC6s90_--k1IxHmxSQIr13glknXQQNF4&__tn__=-R)

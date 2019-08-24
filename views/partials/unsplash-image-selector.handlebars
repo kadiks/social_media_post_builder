@@ -1,0 +1,46 @@
+<div class="card">
+    <div class="card-header" id="headingUnsplashImageSelector">
+        <h2 class="mb-0">
+            <button class="btn btn-link collapsed" type="button" data-toggle="collapse"
+                data-target="#collapseUnsplashImageSelector" aria-expanded="false"
+                aria-controls="collapseUnsplashImageSelector">
+                Images
+            </button>
+        </h2>
+    </div>
+    <div id="collapseUnsplashImageSelector" class="collapse" aria-labelledby="headingUnsplashImageSelector"
+        data-parent="#accordion">
+        <div class="card-body">
+            <div class="form-group">
+                <label>Images</label>
+                <input type="text" name="image-search" class="form-control" id="unsplash-image-selector-search"
+                    placeholder="Search image theme" />
+                <div id="unsplash-image-selector-carousel" class="carousel slide" data-interval="false">
+                    <div class="carousel-inner">
+
+                    </div>
+                    <a class="carousel-control-prev" href="#unsplash-image-selector-carousel" role="button"
+                        data-slide="prev">
+                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                        <span class="sr-only">Previous</span>
+                    </a>
+                    <a class="carousel-control-next" href="#unsplash-image-selector-carousel" role="button"
+                        data-slide="next">
+                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                        <span class="sr-only">Next</span>
+                    </a>
+                </div>
+                <div class="form-group text-right">
+                    <button class="btn btn-primary" id="unsplash-image-selector-selectimage">Select</button>
+                </div>
+                <div class="form-group">
+                    <label>Scale</label>
+                    <input id="unsplash-image-selector-imagescale" class="form-control" type="text" />
+                </div>
+                <div class="form-group text-right">
+                    <a href="#" id="unsplash-image-selector-selectedimageid" target="_blank">Loading...</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

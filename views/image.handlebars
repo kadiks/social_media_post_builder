@@ -1,0 +1,35 @@
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-8">
+            <canvas id="canvas"></canvas>
+            <a href="#" id="exportlink">Export link</a>
+        </div>
+        <div class="col-4">
+            <div class="accordion" id="accordion">
+                {{> image-url-selector }}
+                {{> unsplash-image-selector }}
+                {{> text-editor1 }}
+                {{> color-editor1 }}
+            </div>
+
+            <button id="submit" class="btn btn-primary">Submit</button>
+
+
+        </div>
+    </div>
+</div>
+<div id="data" data-unsplash-api-key="{{ unsplashApiKey }}" data-google-sheets-api-key="{{ googleSheetsApiKey }}"></div>
+
+<script src="/js/jquery.min.js"></script>
+<script src="/css/farbtastic.js"></script>
+<script src="/js/popper.min.js"></script>
+<script src="/js/bootstrap.min.js"></script>
+<script src="/js/qs.js"></script>
+<script src="/js/unsplash.js"></script>
+<script src="/js/i18n/authors.js"></script>
+<script src="/js/fabric.min.js"></script>
+<script src="/js/core/fabric-utils.js"></script>
+<script src="/js/core/dispatcher.js"></script>
+<script src="/js/blocks/unsplash-image-selector.js"></script>
+{{!-- <script src="/js/test.js"></script> --}}
+<script src="/js/image-editor.js"></script>

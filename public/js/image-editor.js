@@ -13,11 +13,13 @@ var carouselEl = null;
 var carouselGsheetsEl = null;
 var unsplashSearchInputEl = null;
 var canvasIcon = null;
+let authorI18n = null;
+let unsplashImageSelector = null;
 let quotes = {
   all: [],
   filtered: []
 };
-let photos = [];
+// let photos = [];
 var authorEl = null;
 
 var screenDim = {
@@ -42,7 +44,8 @@ var els = {
   exportlink: null,
   quotewidth: null,
   selectimage: null,
-  selectedimageid: null
+  selectedimageid: null,
+  queryid: null
 };
 
 const iconColors = {
@@ -88,7 +91,7 @@ var sharedSettings = {
   iconName: null,
   iconWidth: 100,
   iconHeight: 100,
-  iconColor: "#B90000",
+  // iconColor: "#B90000",
   iconOpacity: 0.9,
   authorX: null,
   authorY: null,
@@ -103,7 +106,8 @@ var sharedSettings = {
   titleOpacity: 0.7,
   titleX: null,
   titleY: null,
-  unsplashId: ""
+  unsplashId: "",
+  languages: {}
 };
 
 const onChangeQuoteColor = color => {
@@ -149,7 +153,7 @@ const debounce = (func, wait = 250, immediate) => {
   };
 };
 
-$(() => {
+$(async () => {
   imageInputEl = $("#image");
   textAreaEl = $("#quote");
   authorEl = $("#author");
@@ -163,20 +167,59 @@ $(() => {
   els.quotenumber = $("#quotenumber");
   els.quotefontsize = $("#quotefontsize");
   els.isquoteshadow = $("#isquoteshadow");
-  els.imagescale = $("#imagescale");
+  // els.imagescale = $("#imagescale");
   els.quotefontcolor = $("#quotefontcolor");
   els.quoteshadowcolor = $("#quoteshadowcolor");
   els.exportlink = $("#exportlink");
   els.quotewidth = $("#quotewidth");
-  els.selectimage = $("#selectimage");
-  els.selectedimageid = $("#selectedimageid");
+  // els.selectimage = $("#selectimage");
+  // els.selectedimageid = $("#selectedimageid");
   els.exportlink.css({ opacity: 0.3 });
   $("#quotefontcolorpicker").farbtastic(onChangeQuoteColor);
   $("#quoteshadowcolorpicker").farbtastic(onChangeShadowColor);
   unsplash = new Unsplash({ apiKey: dataEl.attr("data-unsplash-api-key") });
+  unsplashImageSelector = new UnsplashImageSelector({ unsplash });
+  // unsplashImageSelector.on("selectimage", evt => {
+  //   console.log("image-editor.js on selectimage evt", evt);
+  // });
+  // unsplashImageSelector.on("scaleimage", evt => {
+  //   console.log("image-editor.js on scaleimage evt", evt);
+  // });
+  authorI18n = new Authors();
+  await authorI18n.getAll();
+  els.queryid = parseInt(window.location.search.replace("?id=", ""));
+  if (isNaN(els.queryid) === true) {
+    els.queryid = null;
+  }
+
+  if (els.queryid !== null) {
+    const settings = await getSettingsById({ id: els.queryid });
+    sharedSettings = settings;
+    carouselGsheetsEl.hide();
+  }
+
   drawScene();
   // addEventListeners();
 });
+
+const getSettingsById = async ({ id }) => {
+  const res = await fetch(`/exports/${id}/settings.json`);
+  const json = await res.json();
+  return json;
+};
+
+const getQuoteByIndex = ({ index }) => {
+  let quote = {};
+  console.log("#getQuoteByIndex index", index);
+  quotes.all.forEach(q => {
+    // console.log("q.index", parseInt(q.index));
+    // console.log("sharedSettings.quoteIndex", index);
+    if (parseInt(q.index) === index) {
+      quote = q;
+    }
+  });
+  return quote;
+};
 
 const savePhoto = async ({ name }) => {
   els.exportlink.css({ opacity: 0.3 });
@@ -184,22 +227,21 @@ const savePhoto = async ({ name }) => {
   var url = `/generate`;
   const jsonCanvas = canvas.toJSON(["id"]);
   console.log("jsonCanvas", jsonCanvas);
-  var quoteDetails = {};
-  quotes.all.forEach(q => {
-    console.log("q.index", parseInt(q.index));
-    console.log("sharedSettings.quoteIndex", sharedSettings.quoteIndex);
-    if (parseInt(q.index) === sharedSettings.quoteIndex) {
-      quoteDetails = q;
-    }
-  });
-  var unsplashUser = {};
-  photos.forEach(p => {
-    if (p.id === sharedSettings.unsplashId) {
-      unsplashUser = p.user;
-    }
-  });
-  sharedSettings.unsplashUser = unsplashUser;
-  sharedSettings.quoteDetails = quoteDetails;
+  if (sharedSettings.hasOwnProperty("unsplashUser") === false) {
+    var unsplashUser = {};
+    photos.forEach(p => {
+      if (p.id === sharedSettings.unsplashId) {
+        unsplashUser = p.user;
+      }
+    });
+    sharedSettings.unsplashUser = unsplashUser;
+  }
+
+  if (sharedSettings.hasOwnProperty("quoteDetails") === false) {
+    var quoteDetails = getQuoteByIndex({ index: sharedSettings.quoteIndex });
+    sharedSettings.quoteDetails = quoteDetails;
+  }
+
   const res = await fetch(url, {
     method: "POST",
     headers: {
@@ -288,44 +330,26 @@ const addEventListeners = () => {
   //     sharedSettings.imageScale = null;
   //     render({ imageScale: null });
   //   });
-  carouselEl.on("slide.bs.carousel", evt => {
-    const selector = `.carousel-inner > .carousel-item:nth-child(${evt.to +
-      1}) img`;
-    console.log("carousel on slide selector", selector);
-    const imgSrc = carouselEl.find(selector).attr("data-canvas-url");
-    const id = carouselEl.find(selector).attr("alt");
-    els.selectedimageid.attr("href", `https://unsplash.com/photos/${id}`);
-    els.selectedimageid.text(`${id}`);
-    // fabric.Image.fromURL(imgSrc, img => {
-    //   // console.log("okok");
-    //   canvasObj["image"].setSrc(img.getSrc());
-    //   canvasObj["image"].set("width", img.getScaledWidth());
-    //   canvasObj["image"].set("height", img.getScaledHeight());
-    //   canvas.renderAll();
-    //   sharedSettings.imageScale = null;
-    //   render({ imageScale: null });
-  });
-
-  els.selectimage.click(() => {
-    const selector = `.carousel-inner > .carousel-item.active img`;
-    console.log("carousel on slide selector", selector);
-    const imgSrc = carouselEl.find(selector).attr("data-canvas-url");
-    sharedSettings.unsplashId = carouselEl.find(selector).attr("alt");
-    fabric.Image.fromURL(imgSrc, img => {
-      // console.log("okok");
-      canvasObj["image"].setSrc(img.getSrc());
-      canvasObj["image"].set("width", img.getScaledWidth());
-      canvasObj["image"].set("height", img.getScaledHeight());
-      // canvas.renderAll();
-      sharedSettings.imageScale = null;
-      render({ imageScale: null });
-    });
-
-    // console.log("a", a, b, c, d);
-    // canvasImage.setSrc();
-  });
+  // carouselEl.on("slide.bs.carousel", evt => {
+  //   const selector = `.carousel-inner > .carousel-item:nth-child(${evt.to +
+  //     1}) img`;
+  //   console.log("carousel on slide selector", selector);
+  //   const imgSrc = carouselEl.find(selector).attr("data-canvas-url");
+  //   const id = carouselEl.find(selector).attr("alt");
+  //   els.selectedimageid.attr("href", `https://unsplash.com/photos/${id}`);
+  //   els.selectedimageid.text(`${id}`);
+  //   // fabric.Image.fromURL(imgSrc, img => {
+  //   //   // console.log("okok");
+  //   //   canvasObj["image"].setSrc(img.getSrc());
+  //   //   canvasObj["image"].set("width", img.getScaledWidth());
+  //   //   canvasObj["image"].set("height", img.getScaledHeight());
+  //   //   canvas.renderAll();
+  //   //   sharedSettings.imageScale = null;
+  //   //   render({ imageScale: null });
+  // });
 
   carouselGsheetsEl.on("slide.bs.carousel", evt => {
+    console.log('>> #carouselGsheetsEl.on("slide.bs.carousel"');
     const selector = `.carousel-inner > .carousel-item:nth-child(${evt.to +
       1})`;
     console.log("carousel on slide selector", selector);
@@ -352,16 +376,68 @@ const addEventListeners = () => {
     // canvasImage.setSrc();
   });
 
-  unsplashSearchInputEl.keyup(async evt => {
-    if (evt.keyCode === 13) {
-      await reloadImages({ searchTerm: unsplashSearchInputEl.val() });
-    }
-  });
+  // unsplashSearchInputEl.keyup(async evt => {
+  //   if (evt.keyCode === 13) {
+  //     await reloadImages({ searchTerm: unsplashSearchInputEl.val() });
+  //   }
+  // });
 
   els.language.change(() => {
-    console.log("language", els.language.val());
+    // console.log("language", els.language.val());
+    let prevLanguage = sharedSettings.quoteLanguage;
+
     sharedSettings.quoteLanguage = els.language.val();
+    let selectedLanguage = sharedSettings.quoteLanguage;
+    let isEmptyLanguage = false;
+    const quoteDetails = getQuoteByIndex({ index: sharedSettings.quoteIndex });
+
+    if (
+      sharedSettings.languages.hasOwnProperty(sharedSettings.quoteLanguage) ===
+      false
+    ) {
+      selectedLanguage = prevLanguage;
+      isEmptyLanguage = true;
+    }
+
+    console.log("#els.language.change prevLanguage", prevLanguage);
+    console.log(
+      "#els.language.change sharedSettings.quoteLanguage",
+      sharedSettings.quoteLanguage
+    );
+    console.log("#els.language.change language", language);
+    console.log("#els.language.change selectedLanguage", selectedLanguage);
+    console.log("#els.language.change quoteDetails", quoteDetails);
+    console.log("#els.language.change isEmptyLanguage", isEmptyLanguage);
+    console.log("#els.language.change sharedSettings", sharedSettings);
+
+    sharedSettings.quoteFontSize =
+      sharedSettings.languages[selectedLanguage].quoteFontSize;
+    sharedSettings.quoteX = sharedSettings.languages[selectedLanguage].quoteX;
+    sharedSettings.quoteY = sharedSettings.languages[selectedLanguage].quoteY;
+    sharedSettings.quoteText =
+      isEmptyLanguage === true
+        ? quoteDetails[`quote_${sharedSettings.quoteLanguage}`]
+        : sharedSettings.languages[selectedLanguage].quoteText;
+    sharedSettings.authorFontSize =
+      sharedSettings.languages[selectedLanguage].authorFontSize;
+    sharedSettings.author = authorI18n.getTranslatedAuthor({
+      language: sharedSettings.quoteLanguage,
+      author: sharedSettings.languages["en"].author
+    });
+    sharedSettings.authorX = sharedSettings.languages[selectedLanguage].authorX;
+    sharedSettings.authorY = sharedSettings.languages[selectedLanguage].authorY;
+
     reloadQuotes({ language: els.language.val() });
+    console.log("sharedSettings.quoteText", sharedSettings.quoteText);
+    render({
+      quoteX: sharedSettings.quoteX,
+      quoteY: sharedSettings.quoteY,
+      quoteFontSize: sharedSettings.quoteFontSize,
+      quoteText: sharedSettings.quoteText,
+      authorFontSize: sharedSettings.authorFontSize,
+      authorX: sharedSettings.authorX,
+      authorY: sharedSettings.authorY
+    });
   });
   els.category.change(() => {
     console.log("category", els.category.val());
@@ -369,6 +445,7 @@ const addEventListeners = () => {
     reloadQuotes({ category: els.category.val() });
   });
   els.quotefontsize.keyup(() => {
+    console.log(">> #els.quotefontsize.keyup");
     const fontSize = parseInt(els.quotefontsize.val());
     render({
       quoteFontSize: fontSize,
@@ -376,15 +453,50 @@ const addEventListeners = () => {
     });
   });
   els.isquoteshadow.change(() => {
+    console.log(">> #els.isquoteshadow.change");
     render({
       isQuoteShadow: els.isquoteshadow.prop("checked")
     });
   });
-  els.imagescale.keyup(() => {
+  unsplashImageSelector.on("scaled", evt => {
     render({
-      imageScale: parseFloat(els.imagescale.val())
+      imageScale: evt.scale
     });
   });
+
+  // els.selectimage.click(() => {
+  //   const selector = `.carousel-inner > .carousel-item.active img`;
+  //   console.log("carousel on click select selector", selector);
+  //   const imgSrc = carouselEl.find(selector).attr("data-canvas-url");
+  //   sharedSettings.unsplashId = carouselEl.find(selector).attr("alt");
+  //   fabric.Image.fromURL(imgSrc, img => {
+  //     // console.log("okok");
+  //     canvasObj["image"].setSrc(img.getSrc());
+  //     canvasObj["image"].set("width", img.getScaledWidth());
+  //     canvasObj["image"].set("height", img.getScaledHeight());
+  //     // canvas.renderAll();
+  //     sharedSettings.imageScale = null;
+  //     render({ imageScale: null });
+  //   });
+  // });
+
+  unsplashImageSelector.on("selected", evt => {
+    console.log("image-editor.js unsplashImgSel#onSelected evt", evt);
+    fabric.Image.fromURL(evt.sourceUrl, img => {
+      canvasObj["image"].setSrc(img.getSrc());
+      canvasObj["image"].set("width", img.getScaledWidth());
+      canvasObj["image"].set("height", img.getScaledHeight());
+      sharedSettings.imageScale = null;
+      render({ imageScale: null });
+    });
+  });
+
+  // els.imagescale.keyup(() => {
+  //   console.log(">> #els.imagescale.keyup");
+  //   render({
+  //     imageScale: parseFloat(els.imagescale.val())
+  //   });
+  // });
   // els.quotefontcolor.change(() => {
   //   console.log("OKOK");
   //   render({
@@ -405,6 +517,7 @@ const addEventListeners = () => {
   // });
 
   els.quotewidth.keyup(() => {
+    console.log(">> #els.quotewidth.keyup");
     render({
       quoteWidth: parseInt(els.quotewidth.val())
     });
@@ -412,10 +525,12 @@ const addEventListeners = () => {
 };
 
 const displayDefaultState = () => {
+  console.log(">> #displayDefaultState");
   els.quotefontsize.val(sharedSettings.quoteFontSize);
   els.isquoteshadow.prop("checked", sharedSettings.isQuoteShadow);
-  console.log("sharedSettings.imageScale", sharedSettings.imageScale);
-  els.imagescale.val(sharedSettings.imageScale);
+  // console.log("sharedSettings.imageScale", sharedSettings.imageScale);
+  // els.imagescale.val(sharedSettings.imageScale);
+  unsplashImageSelector.refreshScale(sharedSettings.imageScale);
   els.quotefontcolor.val(sharedSettings.quoteColor);
   els.quoteshadowcolor.val(sharedSettings.quoteShadowColor);
   els.language.val(sharedSettings.quoteLanguage);
@@ -432,8 +547,18 @@ const reloadQuotes = ({
     language,
     category
   });
+  console.log("#reloadQuotes language", language);
   console.log("#reloadQuotes filteredQuotes", filteredQuotes);
-  displayQuotes({ quotes: filteredQuotes });
+  let selectedIndex =
+    sharedSettings.quoteIndex === -1 ? null : sharedSettings.quoteIndex;
+  const quoteIndexes = filteredQuotes.map(q => q.index);
+  if (quoteIndexes.indexOf(selectedIndex) === -1) {
+    selectedIndex = null;
+  }
+  displayQuotes({
+    quotes: filteredQuotes,
+    selectedIndex
+  });
 };
 
 const drawScene = async () => {
@@ -448,8 +573,15 @@ const drawScene = async () => {
 
   canvas.setZoom(screenDim.width / canvasDim.width);
 
-  sharedSettings.quoteText = textAreaEl.val();
-  sharedSettings.author = authorEl.val();
+  let imageUrl = unsplash.getUrlById({ id: sharedSettings.unsplashId });
+
+  if (sharedSettings.quoteText === "") {
+    sharedSettings.quoteText = textAreaEl.val();
+    sharedSettings.author = authorEl.val();
+    sharedSettings.quoteCategory = "spirituality";
+    sharedSettings.iconName = "spirituality";
+    imageUrl = imageInputEl.val();
+  }
 
   var rect = new fabric.Rect({
     id: "bg",
@@ -487,7 +619,10 @@ const drawScene = async () => {
     shadow: canvasObj["shadow"]
   });
 
-  canvasObj["icon"] = await loadIcon({ name: "spirituality" });
+  // console.log("#drawScene before #loadIcon");
+  canvasObj["icon"] = await fabricUtils.loadIcon({
+    name: sharedSettings.quoteCategory
+  });
 
   canvasObj["title"] = new fabric.IText(sharedSettings.titleText, {
     id: "title",
@@ -501,10 +636,12 @@ const drawScene = async () => {
     width: canvasDim.width
   });
 
-  await loadImage({
-    url: imageInputEl.val(),
+  await fabricUtils.loadCanvasImage({
+    url: imageUrl,
     id: "image"
   });
+
+  console.log("imageScale", sharedSettings.imageScale);
 
   canvas.add(
     rect,
@@ -516,11 +653,13 @@ const drawScene = async () => {
   );
   addEventListeners();
   displayDefaultState();
-  loadImages();
+  unsplashImageSelector.loadImages({ isDisplayed: false });
   loadQuotes();
+  console.log("#drawScene before render");
   render({
-    iconName: "spirituality"
+    iconName: sharedSettings.iconName
   });
+  // render({iconName: sharedSettings.iconName})
 };
 
 const loadImage = ({ url, id }) =>
@@ -537,18 +676,19 @@ const loadImage = ({ url, id }) =>
     });
   });
 
-// https://stackoverflow.com/a/18616032/185771
-const loadIcon = ({ name }) =>
-  new Promise(resolve => {
-    fabric.loadSVGFromURL(`/svg/${name}.svg`, (objects, options) => {
-      console.log("#loadIcon objects", objects);
-      changeSVGColor({ obj: objects, color: iconColors[name] });
-      const icon = fabric.util.groupSVGElements(objects, options);
-      icon.set({ id: "icon" });
-      changeSVGSize({ icon });
-      resolve(icon);
-    });
-  });
+// // https://stackoverflow.com/a/18616032/185771
+// const loadIcon = ({ name }) =>
+//   new Promise(resolve => {
+//     console.log("#loadIcon name", name);
+//     fabric.loadSVGFromURL(`/svg/${name}.svg`, (objects, options) => {
+//       console.log("#loadIcon objects", objects);
+//       changeSVGColor({ obj: objects, color: iconColors[name] });
+//       const icon = fabric.util.groupSVGElements(objects, options);
+//       icon.set({ id: "icon" });
+//       changeSVGSize({ icon });
+//       resolve(icon);
+//     });
+//   });
 
 const changeSVGColor = ({ obj, color = "#FFF" } = {}) => {
   obj.forEach(o => {
@@ -582,10 +722,13 @@ const changeSVGSize = ({
   // });
 };
 
-const reloadImages = async ({ searchTerm }) => {
-  carouselEl.find(".carousel-inner").empty();
-  await loadImages({ fn: unsplash.searchPhotos, fnParams: { searchTerm } });
-};
+// const reloadImages = async ({ searchTerm }) => {
+//   carouselEl.find(".carousel-inner").empty();
+//   await unsplashImageSelector.loadImages({
+//     fn: unsplash.searchPhotos,
+//     fnParams: { searchTerm }
+//   });
+// };
 
 const filterQuotes = ({ quotes, language, category }) => {
   console.log("#filterQuotes", language);
@@ -598,36 +741,43 @@ const filterQuotes = ({ quotes, language, category }) => {
   return filterCategoryQuotes;
 };
 
-const loadImages = async ({ fn = unsplash.getPhotos, fnParams = {} } = {}) => {
-  photos = await fn(fnParams);
-  // console.log("photos", photos);
-  const html = photos.map(({ id, urls }, index) => {
-    const div = document.createElement("div");
-    const img = document.createElement("img");
-    if (index === 0) {
-      div.setAttribute("class", "carousel-item active");
-    } else {
-      div.setAttribute("class", "carousel-item");
-    }
-    img.setAttribute("class", "d-block w-100");
-    img.setAttribute("src", urls.small);
-    img.setAttribute("data-canvas-url", `${urls.raw}?q=100&w=2300`);
-    img.setAttribute("alt", id);
-    div.append(img);
-    return div;
-  });
-  carouselEl.find(".carousel-inner").append(html);
-  const firstImageLink = `${photos[0].urls.raw}?q=100&w=2300`;
-  fabric.Image.fromURL(firstImageLink, img => {
-    canvasObj["image"].setSrc(img.getSrc());
-    canvasObj["image"].set("width", img.getScaledWidth());
-    canvasObj["image"].set("height", img.getScaledHeight());
-    // canvas.renderAll();
-    sharedSettings.imageScale = null;
-    render({ imageScale: null });
-  });
-  // await loadImage(firstImageLink);
-};
+// const loadImages = async ({
+//   fn = unsplash.getPhotos,
+//   fnParams = {},
+//   isDisplayed = true
+// } = {}) => {
+//   photos = await fn(fnParams);
+//   // console.log("photos", photos);
+//   const html = photos.map(({ id, urls }, index) => {
+//     const div = document.createElement("div");
+//     const img = document.createElement("img");
+//     if (index === 0) {
+//       div.setAttribute("class", "carousel-item active");
+//     } else {
+//       div.setAttribute("class", "carousel-item");
+//     }
+//     img.setAttribute("class", "d-block w-100");
+//     img.setAttribute("src", urls.small);
+//     img.setAttribute("data-canvas-url", `${urls.raw}?q=100&w=2300`);
+//     img.setAttribute("alt", id);
+//     div.append(img);
+//     return div;
+//   });
+//   carouselEl.find(".carousel-inner").append(html);
+//   if (isDisplayed === true) {
+//     const firstImageLink = `${photos[0].urls.raw}?q=100&w=2300`;
+//     fabric.Image.fromURL(firstImageLink, img => {
+//       canvasObj["image"].setSrc(img.getSrc());
+//       canvasObj["image"].set("width", img.getScaledWidth());
+//       canvasObj["image"].set("height", img.getScaledHeight());
+//       // canvas.renderAll();
+//       sharedSettings.imageScale = null;
+//       console.log("#loadImages firstImageLink default");
+//       render({ imageScale: null });
+//     });
+//   }
+//   // await loadImage(firstImageLink);
+// };
 
 const loadQuotes = async () => {
   const res = await fetch("/data");
@@ -647,19 +797,27 @@ const loadQuotes = async () => {
   displayQuotes({ quotes: quotes.filtered });
 };
 
-const displayQuotes = ({ quotes }) => {
+const displayQuotes = ({ quotes, selectedIndex = null }) => {
   const html = quotes.map(
     ({ index, quote_en, quote_fr, quote_es, author, type }, idx) => {
       const div = document.createElement("div");
       const carQuoteEl = document.createElement("p");
       const carAuthorEl = document.createElement("p");
-      if (idx === 0) {
+      if (selectedIndex !== null && index === selectedIndex) {
+        div.setAttribute("class", "carousel-item active");
+      } else if (selectedIndex === null && idx === 0) {
         div.setAttribute("class", "carousel-item active");
       } else {
         div.setAttribute("class", "carousel-item");
       }
       div.setAttribute("style", "padding: 0 35px;");
-      const quoteStr = quote_en ? quote_en : quote_fr ? quote_fr : quote_es;
+      let quoteStr = quote_en ? quote_en : quote_fr ? quote_fr : quote_es;
+      if (sharedSettings.quoteLanguage === "fr" && quote_fr !== "") {
+        quoteStr = quote_fr;
+      }
+      if (sharedSettings.quoteLanguage === "es" && quote_es !== "") {
+        quoteStr = quote_es;
+      }
       div.setAttribute("data-quote", quoteStr);
       div.setAttribute("data-author", author);
       div.setAttribute("data-type", type);
@@ -686,7 +844,8 @@ const render = async ({
   quoteWidth = sharedSettings.quoteWidth,
   author = sharedSettings.author,
   iconName = sharedSettings.iconName,
-  iconColor = sharedSettings.iconColor,
+  // iconColor = sharedSettings.iconColor,
+  quoteLanguage = sharedSettings.quoteLanguage,
   quoteFontSize = sharedSettings.quoteFontSize,
   quoteFontFamily = sharedSettings.quoteFontFamily,
   quoteFontWeight = sharedSettings.quoteFontWeight,
@@ -712,6 +871,7 @@ const render = async ({
   titleX = sharedSettings.titleX,
   titleY = sharedSettings.titleY
 } = {}) => {
+  console.log(">> #render");
   // console.log("isQuoteShadow", isQuoteShadow);
   if (
     (sharedSettings.quoteX === null && sharedSettings.quoteY === null) ||
@@ -740,7 +900,7 @@ const render = async ({
     fill: quoteColor
   });
 
-  console.log(" canvasObj[text].lineHeight ", canvasObj["text"].lineHeight);
+  // console.log("canvasObj[text].lineHeight ", canvasObj["text"].lineHeight);
 
   authorY =
     canvasObj["text"].getScaledHeight() +
@@ -765,29 +925,36 @@ const render = async ({
   if (imageScale === null) {
     imageScale = canvasDim[longestEdge] / dimensions[longestEdge];
   }
-  console.log("imageScale", imageScale);
+  // console.log("imageScale", imageScale);
   canvasObj["image"].scale(imageScale);
 
   if (
     iconName !== sharedSettings.iconName ||
     sharedSettings.iconName === null
   ) {
-    const newIcon = await loadIcon({ name: iconName });
-    const left =
-      (canvas.getWidth() / canvas.getZoom()) * 0.5 -
-      sharedSettings.iconWidth * 0.5;
-    // console.log("newIcon", newIcon);
-    console.log("left", left);
+    // console.log("#render fetch new icon iconName", iconName);
+    // console.log(
+    //   "#render fetch new icon sharedSettings.iconName",
+    //   sharedSettings.iconName
+    // );
+    const newIcon = await fabricUtils.loadIcon({ name: iconName });
     canvasObj["icon"].set({
       d: newIcon.d,
-      path: newIcon.path,
-      top: sharedSettings.iconHeight,
-      left,
-      fill: iconColor
+      path: newIcon.path
     });
-    // canvasObj["icon"].set("path", newIcon.path);
-    // canvasObj['icon']
   }
+  const left =
+    (canvas.getWidth() / canvas.getZoom()) * 0.5 -
+    sharedSettings.iconWidth * 0.5;
+  // console.log("newIcon", newIcon);
+  // console.log("left", left);
+  canvasObj["icon"].set({
+    top: sharedSettings.iconHeight,
+    left,
+    fill: iconColors[iconName]
+  });
+  // canvasObj["icon"].set("path", newIcon.path);
+  // canvasObj['icon']
 
   titleX =
     (canvas.getWidth() / canvas.getZoom()) * 0.5 -
@@ -823,7 +990,7 @@ const render = async ({
   sharedSettings.quoteWidth = quoteWidth;
   sharedSettings.author = author;
   sharedSettings.iconName = iconName;
-  sharedSettings.iconColor = iconColor;
+  // sharedSettings.iconColor = iconColor;
   sharedSettings.quoteFontSize = quoteFontSize;
   sharedSettings.quoteFontFamily = quoteFontFamily;
   sharedSettings.quoteFontWeight = quoteFontWeight;
@@ -848,6 +1015,21 @@ const render = async ({
   sharedSettings.titleOpacity = titleOpacity;
   sharedSettings.titleX = titleX;
   sharedSettings.titleY = titleY;
+
+  if (sharedSettings.hasOwnProperty("languages") === false) {
+    sharedSettings.languages = {};
+  }
+
+  sharedSettings.languages[quoteLanguage] = {
+    quoteFontSize,
+    quoteX,
+    quoteY,
+    quoteText,
+    authorFontSize,
+    authorX,
+    authorY,
+    author
+  };
 
   displayDefaultState();
 };
