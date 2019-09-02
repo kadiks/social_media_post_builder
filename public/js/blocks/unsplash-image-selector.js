@@ -96,18 +96,20 @@ class UnsplashImageSelector extends Dispatcher {
         render({ imageScale: null });
       });
     }
+    this.dispatch("loadedimages", { images: photos });
     // await loadImage(firstImageLink);
   }
 
   async reloadImages({ searchTerm }) {
     this.els.carousel.find(".carousel-inner").empty();
-    await unsplashImageSelector.loadImages({
+    await this.loadImages({
       fn: unsplash.searchPhotos,
-      fnParams: { searchTerm }
+      fnParams: { searchTerm },
+      isDisplayed: false
     });
   }
 
-  refreshScale(scale) {
+  refreshScale({ scale }) {
     this.els.imagescale.val(scale);
   }
 }

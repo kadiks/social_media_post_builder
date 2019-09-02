@@ -10,5 +10,13 @@ module.exports = {
   plato: {
     fr: "Platon",
     es: "Platón"
+  },
+  buddha: {
+    fr: "Bouddha",
+    es: "Buda"
+  },
+  "chinese proverb": {
+    fr: "Proverbe chinois",
+    es: "Proverbio chino"
   }
 };

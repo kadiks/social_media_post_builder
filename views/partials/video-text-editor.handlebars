@@ -1,0 +1,46 @@
+<div class="card">
+    <div class="card-header" id="headingVideoTextEditor">
+        <h2 class="mb-0">
+            <button class="btn btn-link collapsed" type="button" data-toggle="collapse"
+                data-target="#collapseVideoTextEditor" aria-expanded="false" aria-controls="collapseVideoTextEditor">
+                Texts
+            </button>
+        </h2>
+    </div>
+    <div id="collapseVideoTextEditor" class="collapse" aria-labelledby="headingVideoTextEditor"
+        data-parent="#accordion">
+        <div class="card-body">
+            <div class="form-group">
+                <label>Alignment</label>
+                <div class="btn-group" role="group" aria-label="Basic example">
+                    <button id="video-text-alignleft" type="button" class="btn btn-default alignment">Left</button>
+                    <button id="video-text-aligncenter" type="button" class="btn btn-default alignment">Center</button>
+                    <button id="video-text-alignright" type="button" class="btn btn-default alignment">Right</button>
+                </div>
+                <div class="form-group">
+                    <label>Delay Start</label>
+                    <input id="video-text-masterdelaystart" class="form-control" type="text" />
+                </div>
+                <div class="form-group">
+                    <label>Delay Between</label>
+                    <input id="video-text-masterdelaybetween" class="form-control" type="text" />
+                </div>
+                <div class="form-group">
+                    <label>Easing</label>
+                    <select id="video-text-mastereasing">
+                        <option value=""></option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Duration</label>
+                    <input id="video-text-masterduration" class="form-control" type="text" />
+                </div>
+                <hr>
+                <div id="video-text-textforms">
+
+                </div>
+                <button id="video-text-addtextform" class="btn btn-primary">Add text</button>
+            </div>
+        </div>
+    </div>
+</div>

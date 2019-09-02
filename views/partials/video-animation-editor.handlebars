@@ -1,0 +1,106 @@
+<div class="card">
+    <div class="card-header" id="headingVideoAnimationEditor">
+        <h2 class="mb-0">
+            <button class="btn btn-link" type="button" data-toggle="collapse"
+                data-target="#collapseVideoAnimationEditor" aria-expanded="true"
+                aria-controls="collapseVideoAnimationEditor">
+                Animation
+            </button>
+        </h2>
+    </div>
+    <div id="collapseVideoAnimationEditor" class="collapse" aria-labelledby="headingVideoAnimationEditor"
+        data-parent="#accordion">
+        <div class="card-body">
+            <div id="video-animation-propertyform">
+                <div class="row">
+                    <div class="col-4">Property</div>
+                    <div class="col-4">Start</div>
+                    <div class="col-4">End</div>
+                </div>
+                <div class="row property animationpropertyform" id="animationpropertyx">
+                    <div class="col-4">
+                        <select>
+                            <option value="left">x</option>
+                        </select>
+                    </div>
+                    <div class="col-4">
+                        <div class="form-group">
+                            <input type="text" class="form-control start" />
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="form-group">
+                            <input type="text" class="form-control end" />
+                        </div>
+                    </div>
+                </div>
+                <div class="row property animationpropertyform" id="animationpropertyy">
+                    <div class="col-4">
+                        <select>
+                            <option value="top">y</option>
+                        </select>
+                    </div>
+                    <div class="col-4">
+                        <div class="form-group">
+                            <input type="text" class="form-control start" />
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="form-group">
+                            <input type="text" class="form-control end" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Duration</label>
+                <input id="video-animation-duration" class="form-control" type="text" />
+            </div>
+            <div class="form-group">
+                <label>Easing</label>
+                <select id="video-animation-easing">
+
+                </select>
+                {{!-- <input  class="form-control" type="text" /> --}}
+            </div>
+            <div class="form-group">
+                <label>Delay</label>
+                <input id="video-animation-delay" class="form-control" type="text" />
+            </div>
+            <hr>
+            <h4>Transition</h4>
+            <hr>
+            <div class="form-group">
+                <label>Duration</label>
+                <input id="video-animation-transitionduration" class="form-control" type="text" />
+            </div>
+            <div id="video-animation-transitionpropertyform">
+                <div class="row">
+                    <div class="col-4">Property</div>
+                    <div class="col-4">Start</div>
+                    <div class="col-4">End</div>
+                </div>
+                <!-- <div class="row">
+                    <div class="col-4">
+                        <select>
+                            <option value="x">x</option>
+                            <option value="y">y</option>
+                            <option value="opacity">opacity</option>
+                        </select>
+                    </div>
+                    <div class="col-4">
+                        <div class="form-group">
+                            <input type="text" class="form-control" />
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="form-group">
+                            <input type="text" class="form-control" />
+                        </div>
+                    </div>
+                </div> -->
+            </div>
+            <button id="video-animation-transitionaddproperty" class="btn btn-default">Add property</button>
+        </div>
+    </div>
+</div>

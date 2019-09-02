@@ -10,6 +10,7 @@
                 {{> unsplash-image-selector }}
                 {{> text-editor1 }}
                 {{> color-editor1 }}
+                {{> publications-editor }}
             </div>
 
             <button id="submit" class="btn btn-primary">Submit</button>
@@ -18,7 +19,8 @@
         </div>
     </div>
 </div>
-<div id="data" data-unsplash-api-key="{{ unsplashApiKey }}" data-google-sheets-api-key="{{ googleSheetsApiKey }}"></div>
+<div id="data" data-unsplash-api-key="{{ unsplashApiKey }}" data-google-sheets-api-key="{{ googleSheetsApiKey }}"
+    data-categories="{{ categories }}" data-publishing-platforms="{{ platforms }}"></div>
 
 <script src="/js/jquery.min.js"></script>
 <script src="/css/farbtastic.js"></script>
@@ -31,5 +33,6 @@
 <script src="/js/core/fabric-utils.js"></script>
 <script src="/js/core/dispatcher.js"></script>
 <script src="/js/blocks/unsplash-image-selector.js"></script>
+<script src="/js/blocks/publications-editor.js"></script>
 {{!-- <script src="/js/test.js"></script> --}}
 <script src="/js/image-editor.js"></script>

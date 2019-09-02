@@ -2,8 +2,10 @@
     <div class="row">
         <div class="col-8">
             <div class="text-center">
-                <span id="video-nav">1 / 1</span> <button id="video-play" class="btn btn-primary">Play</button> <button
-                    id="video-add-slide" class="btn btn-primary">Add slide</button>
+                <span id="video-nav-prev">Previous</span> <span id="video-nav">1 / 1</span> <span
+                    id="video-nav-next">Next</span> <button id="video-play" class="btn btn-primary">Play</button>
+                <button id="video-add-slide" class="btn btn-primary">Add slide</button> <button id="video-play-all"
+                    class="btn btn-primary">Play all</button>
             </div>
             <canvas id="canvas"></canvas>
             <a href="#" id="exportlink">Export link</a>
@@ -11,6 +13,8 @@
         <div class="col-4">
             <div class="accordion" id="accordion">
                 {{> unsplash-image-selector }}
+                {{> video-animation-editor }}
+                {{> video-text-editor }}
             </div>
 
             <button id="submit" class="btn btn-primary">Submit</button>
@@ -29,5 +33,7 @@
 <script src="/js/core/fabric-utils.js"></script>
 <script src="/js/core/dispatcher.js"></script>
 <script src="/js/blocks/unsplash-image-selector.js"></script>
+<script src="/js/blocks/video-text-editor.js"></script>
+<script src="/js/blocks/video-animation-editor.js"></script>
 {{!-- <script src="/js/test.js"></script> --}}
 <script src="/js/video-editor.js"></script>

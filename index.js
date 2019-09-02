@@ -9,7 +9,11 @@ const request = require("request-promise-native");
 const _ = require("lodash");
 const fabric = require("fabric").fabric;
 const moment = require("moment");
-const { CATEGORIES, AUTHORS_I18N } = require("./src/constants");
+const {
+  CATEGORIES,
+  AUTHORS_I18N,
+  PUBLISHING_PLATFORMS
+} = require("./src/constants");
 
 const gsheets = require("./gsheets");
 
@@ -43,12 +47,11 @@ app.use("/css", express.static(__dirname + "/node_modules/farbstastic"));
 // https://stackoverflow.com/a/26983436/185771
 app.get("/proxy", (req, res) => {
   const url = req.query.url;
-  request
-    .get(url)
-    .catch(e => {
-      console.log(`/proxy on url ${url} with error ${e}`);
-    })
-    .pipe(res);
+  try {
+    request.get(url).pipe(res);
+  } catch (e) {
+    console.log(`/proxy on url ${url} with error ${e}`);
+  }
 });
 
 app.get("/", async (req, res) => {
@@ -113,10 +116,15 @@ app.get("/", async (req, res) => {
   });
 
   const orderSettingsByTs = [];
+  const addedIds = [];
   orderById.forEach((quoteIndex, index) => {
-    if (groupIndex.hasOwnProperty(quoteIndex) === true) {
+    if (
+      groupIndex.hasOwnProperty(quoteIndex) === true &&
+      addedIds.indexOf(quoteIndex) === -1
+    ) {
+      addedIds.push(quoteIndex);
       const group = JSON.parse(JSON.stringify(groupIndex[quoteIndex]));
-      console.log("group", Object.keys(group));
+      // console.log("group", Object.keys(group));
       let lang = "en";
       let ts = _.get(group, "en[0].name", new Date().getTime());
       if (_.get(group, "fr[0].name", 0) > ts) {
@@ -134,6 +142,8 @@ app.get("/", async (req, res) => {
       group.info = {
         id: latest.name,
         title: latest.quoteText,
+        row: latest.quoteDetails.index + 2,
+        index: latest.quoteDetails.index,
         date: moment(latest.name).format("YYYY-MM-DD HH:mm:ss")
       };
       orderSettingsByTs.push(group);
@@ -177,7 +187,8 @@ app.get("/image", (req, res) => {
   res.render("image", {
     unsplashApiKey: UNSPLASH_CLIENT_ID,
     googleSheetsApiKey: GOOGLE_SHEETS_KEY,
-    categories: Object.values(CATEGORIES)
+    categories: Object.values(CATEGORIES).join(","),
+    platforms: Object.values(PUBLISHING_PLATFORMS).join(",")
   });
 });
 
@@ -283,9 +294,7 @@ const getCaption = ({ settings }) => {
     photoCredits += ` Tw: @${unsplashUser.twitter_username}`;
   }
   if (quoteDetails.suggested_by_name !== "") {
-    shareMention = `This quote has been suggested by our member: ${
-      quoteDetails.suggested_by_name
-    } `;
+    shareMention = `This quote has been suggested by our member: ${quoteDetails.suggested_by_name} `;
     if (quoteDetails.suggested_by_fb !== "") {
       shareMention += `FB: ${quoteDetails.suggested_by_fb} `;
     }

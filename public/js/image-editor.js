@@ -15,11 +15,12 @@ var unsplashSearchInputEl = null;
 var canvasIcon = null;
 let authorI18n = null;
 let unsplashImageSelector = null;
+let publicationsEditor = null;
 let quotes = {
   all: [],
   filtered: []
 };
-// let photos = [];
+let photos = [];
 var authorEl = null;
 
 var screenDim = {
@@ -45,7 +46,8 @@ var els = {
   quotewidth: null,
   selectimage: null,
   selectedimageid: null,
-  queryid: null
+  queryid: null,
+  quoteid: null
 };
 
 const iconColors = {
@@ -172,6 +174,7 @@ $(async () => {
   els.quoteshadowcolor = $("#quoteshadowcolor");
   els.exportlink = $("#exportlink");
   els.quotewidth = $("#quotewidth");
+  els.quoteid = $("#quoteid");
   // els.selectimage = $("#selectimage");
   // els.selectedimageid = $("#selectedimageid");
   els.exportlink.css({ opacity: 0.3 });
@@ -179,6 +182,9 @@ $(async () => {
   $("#quoteshadowcolorpicker").farbtastic(onChangeShadowColor);
   unsplash = new Unsplash({ apiKey: dataEl.attr("data-unsplash-api-key") });
   unsplashImageSelector = new UnsplashImageSelector({ unsplash });
+  const platforms = dataEl.attr("data-publishing-platforms").split(",");
+  publicationsEditor = new PublicationsEditor({ platforms });
+
   // unsplashImageSelector.on("selectimage", evt => {
   //   console.log("image-editor.js on selectimage evt", evt);
   // });
@@ -226,8 +232,16 @@ const savePhoto = async ({ name }) => {
   const { width, height } = canvasDim;
   var url = `/generate`;
   const jsonCanvas = canvas.toJSON(["id"]);
-  console.log("jsonCanvas", jsonCanvas);
-  if (sharedSettings.hasOwnProperty("unsplashUser") === false) {
+  // console.log("jsonCanvas", jsonCanvas);
+  // console.log(
+  //   "#savePhoto sharedSettings.unsplashId",
+  //   sharedSettings.unsplashId
+  // );
+  // console.log("#savePhoto photos", photos);
+  if (
+    sharedSettings.hasOwnProperty("unsplashUser") === false ||
+    Object.keys(sharedSettings.unsplashUser || {}).length === 0
+  ) {
     var unsplashUser = {};
     photos.forEach(p => {
       if (p.id === sharedSettings.unsplashId) {
@@ -275,7 +289,7 @@ const addEventListeners = () => {
 
   imageInputEl.change(() => {
     // fabric.Image.fromURL(imageInputEl.val(), img => {
-    console.log("change image");
+    // console.log("change image");
     canvasObj["image"].setSrc(imageInputEl.val());
     sharedSettings.imageScale = null;
     render({ imageScale: null });
@@ -363,6 +377,7 @@ const addEventListeners = () => {
     // console.log("authorEl", authorEl);
     textAreaEl.text(quote);
     authorEl.val(author);
+    els.quoteid.text(quoteIndex + 2);
 
     render({
       quoteText: quote,
@@ -463,6 +478,13 @@ const addEventListeners = () => {
       imageScale: evt.scale
     });
   });
+  unsplashImageSelector.on("loadedimages", evt => {
+    console.log(
+      ">> #addEventListeners unsplashImageSelector on loadedimages",
+      evt
+    );
+    photos = evt.images;
+  });
 
   // els.selectimage.click(() => {
   //   const selector = `.carousel-inner > .carousel-item.active img`;
@@ -482,6 +504,7 @@ const addEventListeners = () => {
 
   unsplashImageSelector.on("selected", evt => {
     console.log("image-editor.js unsplashImgSel#onSelected evt", evt);
+    sharedSettings.unsplashId = evt.unsplashId;
     fabric.Image.fromURL(evt.sourceUrl, img => {
       canvasObj["image"].setSrc(img.getSrc());
       canvasObj["image"].set("width", img.getScaledWidth());
@@ -530,7 +553,7 @@ const displayDefaultState = () => {
   els.isquoteshadow.prop("checked", sharedSettings.isQuoteShadow);
   // console.log("sharedSettings.imageScale", sharedSettings.imageScale);
   // els.imagescale.val(sharedSettings.imageScale);
-  unsplashImageSelector.refreshScale(sharedSettings.imageScale);
+  unsplashImageSelector.refreshScale({ scale: sharedSettings.imageScale });
   els.quotefontcolor.val(sharedSettings.quoteColor);
   els.quoteshadowcolor.val(sharedSettings.quoteShadowColor);
   els.language.val(sharedSettings.quoteLanguage);
@@ -641,7 +664,7 @@ const drawScene = async () => {
     id: "image"
   });
 
-  console.log("imageScale", sharedSettings.imageScale);
+  // console.log("imageScale", sharedSettings.imageScale);
 
   canvas.add(
     rect,

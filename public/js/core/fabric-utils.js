@@ -14,6 +14,13 @@ fabricUtils.loadCanvasImage = ({ url, id }) =>
     });
   });
 
+fabricUtils.loadImage = ({ url }) =>
+  new Promise(resolve => {
+    new fabric.Image.fromURL(url, img => {
+      resolve(img);
+    });
+  });
+
 fabricUtils.loadProxyImage = ({ url }) =>
   new Promise(resolve => {
     new fabric.Image.fromURL("http://localhost:3000/proxy?url=" + url, img => {
